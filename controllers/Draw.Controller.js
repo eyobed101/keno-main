@@ -10,6 +10,7 @@ let tickets = [];
 let unSelectedNumbers = [];
 let selectedNums = [];
 let luckyTicketsId = [];
+let luckyTicketIdMulti = [];
 let TotalMoneyCollected = 0;
 let totalMoneyForLuckyTicket = 0;
 let luckyNum = [];
@@ -112,7 +113,13 @@ const AllSelectedNumbers = (tickets) => {
   let numbersofALL = [];
   for (let i = 0; i < tickets.length; i++) {
     for (let j = 0; j < tickets[i].numbers.length; j++) {
-      numbersofALL.push(tickets[i].numbers[j]);
+      if (Array.isArray(tickets[i].numbers[j])) {
+        for (let k = 0; k < tickets[i].numbers[j].length; k++) {
+          numbersofALL.push(tickets[i].numbers[j][k]);
+        }
+      } else {
+        numbersofALL.push(tickets[i].numbers[j]);
+      }
     }
   }
   return numbersofALL;
@@ -121,7 +128,11 @@ const AllSelectedNumbers = (tickets) => {
 const totalMoneyCollected = (t) => {
   let total = 0;
   for (let j = 0; j < t.length; j++) {
-    total = total + t[j].money;
+    if (t[j].type === 1) {
+      total = total + t[j].money * t[j].numbers.length;
+    } else {
+      total = total + t[j].money;
+    }
   }
   // MoneyFromBet = total
   return total;
@@ -166,7 +177,17 @@ const allLuckyNumbers = (min, max, n = 1) =>
 const selectedNumbersUnion = (tickets) => {
   for (let i = 0; i < tickets.length; i++) {
     for (let j = 0; j < tickets[i].numbers.length; j++) {
-      if (!selectedNums.includes(tickets[i].numbers[j])) {
+      if (Array.isArray(tickets[i].numbers[j])) {
+        for (let k = 0; k < tickets[i].numbers[j].length; k++) {
+          if (!selectedNums.includes(tickets[i].numbers[j][k])) {
+            console.log(
+              "Multiple Ticket Arra Elements",
+              tickets[i].numbers[j][k]
+            );
+            selectedNums.push(tickets[i].numbers[j][k]);
+          }
+        }
+      } else if (!selectedNums.includes(tickets[i].numbers[j])) {
         selectedNums.push(tickets[i].numbers[j]);
       }
     }
@@ -187,8 +208,16 @@ const random_item = (items) => {
   return items[Math.floor(Math.random() * items.length)];
 };
 
-const elementCount = (arr, element) => {
-  return arr.filter((currentElement) => currentElement === element).length;
+const elementCount = (arr, element, type) => {
+  if (type === 0) {
+    return arr.filter((currentElement) => currentElement === element).length;
+  } else {
+    return arr.filter(
+      (currentElement) =>
+        currentElement.id === element.id &&
+        currentElement.index === element.index
+    ).length;
+  }
 };
 
 const totalMoneyAssignForGame = (tic) => {
@@ -200,7 +229,7 @@ const totalMoneyAssignForGame = (tic) => {
   MoneyAfterGame = 15 * +game + 5000 + 300 * Math.cos(5 * +game);
 
   divider = +MoneyAfterGame - +MoneyInShop;
-  console.log("the divider:", divider);
+  // console.log("the divider:", divider);
 
   let multiplier = 0;
   let TransMoney = 0;
@@ -213,29 +242,29 @@ const totalMoneyAssignForGame = (tic) => {
     }
 
     TransMoney = multiplier * getTotalMoneyCollected;
-    console.log("TransMoney", TransMoney);
+    // console.log("TransMoney", TransMoney);
     // if((getTotalMoneyCollected - TransMoney) < 100){
     //   TransMoney = TransMoney + 80
     // }
     let randomLuckeyNumber = Math.floor(Math.random() * 3) + 1;
 
-    console.log(
-      "Here is The Deterministic Random Number to High Win :",
-      randomLuckeyNumber
-    );
-    console.log("Unclaimed Money :", UnclaimedMoney);
+    // console.log(
+    //   "Here is The Deterministic Random Number to High Win :",
+    //   randomLuckeyNumber
+    // );
+    // console.log("Unclaimed Money :", UnclaimedMoney);
     if (UnclaimedMoney > 0 && randomLuckeyNumber === 2) {
       CondtionOfHighWin = true;
       TotalMoneyCollected =
         getTotalMoneyCollected + UnclaimedMoney + TransMoney;
-      console.log("High Win Total Money : ", TotalMoneyCollected);
+      // console.log("High Win Total Money : ", TotalMoneyCollected);
       UnclaimedMoney = 0;
     } else {
       TotalMoneyCollected = getTotalMoneyCollected + TransMoney;
-      console.log(
-        "Total Money Collected in the bet : ",
-        getTotalMoneyCollected
-      );
+      // console.log(
+      //   "Total Money Collected in the bet : ",
+      //   getTotalMoneyCollected
+      // );
     }
 
     // TotalMoneyCollected = getTotalMoneyCollected + TransMoney;
@@ -246,18 +275,18 @@ const totalMoneyAssignForGame = (tic) => {
     MainAccount = MainAccountNow;
     // localStorage.setItem("initial", lose);
 
-    console.log("Main Account Now Lose:", MainAccount);
+    // console.log("Main Account Now Lose:", MainAccount);
   } else if (divider > 0) {
     multiplier = +MoneyInShop / MoneyAfterGame;
     if (multiplier > 0.6) {
       multiplier = 0.6;
     }
     TransMoney = multiplier * getTotalMoneyCollected;
-    console.log("TransMoney", TransMoney);
+    // console.log("TransMoney", TransMoney);
     // if((getTotalMoneyCollected - TransMoney) < 100){
     //   TransMoney = TransMoney + 80
     // }
-    console.log("Total Money Collected in the bet : ", getTotalMoneyCollected);
+    // console.log("Total Money Collected in the bet : ", getTotalMoneyCollected);
     TotalMoneyCollected = getTotalMoneyCollected - TransMoney;
     // TotalMoneyCollected = totalMoneyCollected(tickets) - Math.abs(divider);
 
@@ -268,7 +297,7 @@ const totalMoneyAssignForGame = (tic) => {
 
     // localStorage.setItem("initial", gain);
 
-    console.log("Main Account Now Gain :", MainAccount);
+    // console.log("Main Account Now Gain :", MainAccount);
   } else {
     TotalMoneyCollected = getTotalMoneyCollected;
   }
@@ -300,11 +329,26 @@ const mode = (array) => {
 const getSingleTicketMoney = (rand, tic) => {
   totalMoneyForLuckyTicket = 0;
 
+  nominatedNumsToBeRemoved = [];
+
+  nominatedNumsToBeRemoved = mode(numbersofALL);
+
   var Odd = 0;
   luckyTicketsId = [];
+  luckyTicketIdMulti = [];
   for (let i = 0; i < rand.length; i++) {
     for (let k = 0; k < tic.numbers.length; k++) {
-      if (rand[i] === tic.numbers[k]) {
+      if (Array.isArray(tic.numbers[k])) {
+        for (let j = 0; j < tic.numbers[k].length; j++) {
+          if (rand[i] === tic.numbers[k][j]) {
+            if (!luckyNum.includes(tic.numbers[k][j])) {
+              luckyNum.push(tic.numbers[k][j]);
+            }
+            luckyTicketIdMulti.push({ id: tic.id, index: k });
+            console.log(`id is ${tic.id} and index of the array ${k}`);
+          }
+        }
+      } else if (rand[i] === tic.numbers[k]) {
         // console.log("Lucky Numbers ", luckyNum)
         if (!luckyNum.includes(tic.numbers[k])) {
           luckyNum.push(tic.numbers[k]);
@@ -313,35 +357,68 @@ const getSingleTicketMoney = (rand, tic) => {
       }
     }
   }
-  Odd = oddGenerator(tic.numbers.length, elementCount(luckyTicketsId, tic.id));
 
-  if (Odd > 0) {
-    winnertickets.push({ ticket: tic.id, win: Odd * tic.money });
-  }
+  if (tic.type === 1) {
+    for (let i = 0; i < tic.numbers.length; i++) {
+      Odd = oddGenerator(
+        tic.numbers[i].length,
+        elementCount(luckyTicketIdMulti, { id: tic.id, index: i }, 1)
+      );
+      console.log("type 1 card", Odd);
 
-  if (Odd > 1) {
-    HighOddWinnertickets.push({ ticket: tic.id, odd: Odd });
-  }
+      if (Odd > 0) {
+        winnertickets.push({ ticket: tic.id, win: Odd * tic.money });
+      }
 
-  // if (Odd >= 3) {
-  //   BigOddTicketsCollection.push({
-  //     id: tic.id,
-  //     Odd: Odd,
-  //     Numbers: tic.numbers,
-  //   });
-  // }
-  totalMoneyForLuckyTicket = tic.money * Odd;
+      if (Odd > 1) {
+        HighOddWinnertickets.push({ ticket: tic.id, odd: Odd });
+      }
 
-  nominatedNumsToBeRemoved = [];
+      totalMoneyForLuckyTicket = totalMoneyForLuckyTicket + tic.money * Odd;
 
-  nominatedNumsToBeRemoved = mode(numbersofALL);
-
-  // nominatedNumsToBeRemovedByOdd = [];
-  if (Odd > biggestOdd) {
-    biggestOdd = Odd;
-    nominatedNumsToBeRemovedByOdd = luckyNum.filter((x) =>
-      tic.numbers.includes(x)
+      console.log(
+        `this id ${tic.id} got luckey with ${totalMoneyForLuckyTicket}`
+      );
+      if (Odd > biggestOdd) {
+        biggestOdd = Odd;
+        nominatedNumsToBeRemovedByOdd = luckyNum.filter((x) =>
+          tic.numbers[i].includes(x)
+        );
+      }
+    }
+  } else {
+    Odd = oddGenerator(
+      tic.numbers.length,
+      elementCount(luckyTicketsId, tic.id, 0)
     );
+
+    if (Odd > 0) {
+      winnertickets.push({ ticket: tic.id, win: Odd * tic.money });
+    }
+
+    if (Odd > 1) {
+      HighOddWinnertickets.push({ ticket: tic.id, odd: Odd });
+    }
+
+    // if (Odd >= 3) {
+    //   BigOddTicketsCollection.push({
+    //     id: tic.id,
+    //     Odd: Odd,
+    //     Numbers: tic.numbers,
+    //   });
+    // }
+    totalMoneyForLuckyTicket = tic.money * Odd;
+    console.log(
+      `this id ${tic.id} got luckey with ${totalMoneyForLuckyTicket}`
+    );
+
+    // nominatedNumsToBeRemovedByOdd = [];
+    if (Odd > biggestOdd) {
+      biggestOdd = Odd;
+      nominatedNumsToBeRemovedByOdd = luckyNum.filter((x) =>
+        tic.numbers.includes(x)
+      );
+    }
   }
 
   return totalMoneyForLuckyTicket;
@@ -354,8 +431,10 @@ const getTotalMoneyForAllLuckyTickets = (rand, tics) => {
   for (let i = 0; i < tics.length; i++) {
     totalMoneyForLuckeyTickets =
       totalMoneyForLuckeyTickets + getSingleTicketMoney(rand, tics[i]);
+
     //console.log(totalMoneyForLuckeyTickets);
   }
+
   return totalMoneyForLuckeyTickets;
 };
 
@@ -411,65 +490,111 @@ const remover = (rand, num) => {
 // DoHighWinner is a function to slecte optimized random numbers that resembles to one high winner
 
 const DoHighWinner = (rand, tic, totalAssignedMoney) => {
+  console.log("#####################################################");
 
-  console.log("#####################################################3")
-  
   let newRand = [];
-
+  let MoneyBetByWinner = 0;
+  let NumberIntheBet = 0;
   let SizeOfTicket = tic.length;
 
   let randomLuckeyNumber = Math.floor(Math.random() * SizeOfTicket) + 1;
 
   let HighWinnerToBe = tic[randomLuckeyNumber - 1];
+  MoneyBetByWinner = HighWinnerToBe.money;
 
-  let MoneyBetByWinner = HighWinnerToBe.money;
+  if (HighWinnerToBe.type === 1) {
+    let RandomArrayFromMltiple =
+      Math.floor(Math.random() * HighWinnerToBe.numbers.length) + 1;
+    let theArray = HighWinnerToBe.numbers[RandomArrayFromMltiple];
 
-  let NumberIntheBet = HighWinnerToBe.numbers.length;
+    NumberIntheBet = theArray.length;
 
-  let NumberOfLuckeyNumbersToBe = 0;
+    let NumberOfLuckeyNumbersToBe = 0;
 
-  for (let i = NumberIntheBet; i > 0; i--) {
-    if (
-      oddGenerator(NumberIntheBet, i) * MoneyBetByWinner >
-      totalAssignedMoney
-    ) {
-    } else {
-      NumberOfLuckeyNumbersToBe = i;
-      break;
-    }
-  }
-
-  // remove n number of elements from randomly selected array that exists in SelectedNums if there are any
-  console.log("NumberOfLuckeyNumbersTobe  :  ", NumberOfLuckeyNumbersToBe);
-  for (let i = 0; i < NumberOfLuckeyNumbersToBe; i++) {
-    // for(let j = 0; j<selectedNums.length; j++){
-    //   if(rand.includes(selectedNums[j])){
-    //     newRand = rand.filter(element => element !== selectedNums[j]);
-    //     break
-    //   }
-
-    // }
-    const randomIndex = Math.floor(Math.random() * rand.length);
-    rand.splice(randomIndex, 1);
-  }
-
-  console.log("rand remainng after slice  :  ", rand);
-
-
-  for (let i = 0; i < NumberOfLuckeyNumbersToBe; i++) {
-    for (let j = 0; j < selectedNums.length; j++) {
+    for (let i = NumberIntheBet; i > 0; i--) {
       if (
-        !rand.includes(selectedNums[j]) &&
-        HighWinnerToBe.numbers.includes(selectedNums[j])
+        oddGenerator(NumberIntheBet, i) * MoneyBetByWinner >
+        totalAssignedMoney
       ) {
-        rand.push(selectedNums[j]);
+      } else {
+        NumberOfLuckeyNumbersToBe = i;
         break;
+      }
+    }
+
+    // remove n number of elements from randomly selected array that exists in SelectedNums if there are any
+    console.log("NumberOfLuckeyNumbersTobe  :  ", NumberOfLuckeyNumbersToBe);
+    for (let i = 0; i < NumberOfLuckeyNumbersToBe; i++) {
+      // for(let j = 0; j<selectedNums.length; j++){
+      //   if(rand.includes(selectedNums[j])){
+      //     newRand = rand.filter(element => element !== selectedNums[j]);
+      //     break
+      //   }
+
+      // }
+      const randomIndex = Math.floor(Math.random() * rand.length);
+      rand.splice(randomIndex, 1);
+    }
+
+    console.log("rand remainng after slice  :  ", rand);
+
+    for (let i = 0; i < NumberOfLuckeyNumbersToBe; i++) {
+      for (let j = 0; j < selectedNums.length; j++) {
+        if (
+          !rand.includes(selectedNums[j]) &&
+          theArray.includes(selectedNums[j])
+        ) {
+          rand.push(selectedNums[j]);
+          break;
+        }
+      }
+    }
+  } else {
+    NumberIntheBet = HighWinnerToBe.numbers.length;
+
+    let NumberOfLuckeyNumbersToBe = 0;
+
+    for (let i = NumberIntheBet; i > 0; i--) {
+      if (
+        oddGenerator(NumberIntheBet, i) * MoneyBetByWinner >
+        totalAssignedMoney
+      ) {
+      } else {
+        NumberOfLuckeyNumbersToBe = i;
+        break;
+      }
+    }
+
+    // remove n number of elements from randomly selected array that exists in SelectedNums if there are any
+    console.log("NumberOfLuckeyNumbersTobe  :  ", NumberOfLuckeyNumbersToBe);
+    for (let i = 0; i < NumberOfLuckeyNumbersToBe; i++) {
+      // for(let j = 0; j<selectedNums.length; j++){
+      //   if(rand.includes(selectedNums[j])){
+      //     newRand = rand.filter(element => element !== selectedNums[j]);
+      //     break
+      //   }
+
+      // }
+      const randomIndex = Math.floor(Math.random() * rand.length);
+      rand.splice(randomIndex, 1);
+    }
+
+    console.log("rand remainng after slice  :  ", rand);
+
+    for (let i = 0; i < NumberOfLuckeyNumbersToBe; i++) {
+      for (let j = 0; j < selectedNums.length; j++) {
+        if (
+          !rand.includes(selectedNums[j]) &&
+          HighWinnerToBe.numbers.includes(selectedNums[j])
+        ) {
+          rand.push(selectedNums[j]);
+          break;
+        }
       }
     }
   }
 
-    console.log("newRand after processes  :  ", rand);
-
+  console.log("newRand after processes  :  ", rand);
 
   let itration = 20 - rand.length;
 
@@ -484,8 +609,7 @@ const DoHighWinner = (rand, tic, totalAssignedMoney) => {
     }
   }
 
-    console.log("final newRand in highWinner  :  ", rand);
-
+  console.log("final newRand in highWinner  :  ", rand);
 
   return rand;
 };
@@ -494,21 +618,21 @@ const decisionMaker = (rand, tic) => {
   console.log("Numbers  ", rand);
   var totalLuckyMoney = getTotalMoneyForAllLuckyTickets(rand, tic);
   // TotalMoneyLose = totalLuckyMoney
-  console.log("Total Lucky Money : ", totalLuckyMoney);
+  // console.log("Total Lucky Money : ", totalLuckyMoney);
   var totalAssignedMoney = totalMoneyAssignForGame(tic);
 
   if (CondtionOfHighWin) {
     let highWinnerRand = DoHighWinner(rand, tic, totalAssignedMoney);
     return highWinnerRand;
   } else {
-    console.log("Total Assigned Money : ", totalAssignedMoney);
+    // console.log("Total Assigned Money : ", totalAssignedMoney);
     // console.log(totalLuckyMoney, totalAssignedMoney)
 
     console.log(rand, luckyNum);
     if (totalLuckyMoney > totalAssignedMoney) {
       HighOddWinnertickets = [];
       winnertickets = [];
-      console.log("Nominated Numbers", nominatedNumsToBeRemovedByOdd);
+      // console.log("Nominated Numbers", nominatedNumsToBeRemovedByOdd);
       remover(rand, nominatedNumsToBeRemovedByOdd);
     } else {
       UnclaimedMoney = UnclaimedMoney + (totalAssignedMoney - totalLuckyMoney);
